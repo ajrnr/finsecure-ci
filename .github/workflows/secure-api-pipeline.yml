@@ -1,0 +1,24 @@
+name: secure-api-pipeline
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: TruffleHog
+        run: |
+          docker run --rm -v "$PWD:/repo" trufflesecurity/trufflehog:latest \
+            git file:///repo --results=verified,unknown --fail --no-update
+  sast:
+    runs-on: ubuntu-latest
+    needs: secrets
+    container: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semgrep
+        run: semgrep scan --config .semgrep/rules/detect-sqli.yml --error --metrics=off --exclude .semgrep

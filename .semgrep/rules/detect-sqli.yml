@@ -1,0 +1,37 @@
+rules:
+  - id: finsecure-js-sqli-string-building
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      Requete SQL construite par interpolation ou concatenation. Utiliser une requete parametree.
+    metadata:
+      cwe: "CWE-89: SQL Injection"
+      owasp: "A05:2025 - Injection"
+    patterns:
+      - pattern-either:
+          - pattern: $DB.$METHOD(`...${$X}...`, ...)
+          - pattern: $DB.$METHOD("..." + $X, ...)
+          - pattern: |
+              $SQL = "..." + $X;
+              ...
+              $DB.$METHOD($SQL, ...);
+      - pattern-not: $DB.$METHOD("..." + "...", ...)
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(query|execute|raw|exec)$
+  - id: finsecure-python-sqli-string-formatting
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Requete SQL formatee avant execution. Utiliser des parametres lies.
+    metadata:
+      cwe: "CWE-89: SQL Injection"
+      owasp: "A05:2025 - Injection"
+    patterns:
+      - pattern-either:
+          - pattern: $CUR.$METHOD(f"...", ...)
+          - pattern: $CUR.$METHOD("..." % $X, ...)
+          - pattern: $CUR.$METHOD("...".format(...), ...)
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(execute|executemany)$
